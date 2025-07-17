@@ -122,7 +122,7 @@ class WhatCMSScraper:
         results = []
 
         for count, url in enumerate(self.urls, 1):
-            logging.info(f"Processing {i}/{len(self.urls)}: {url}")
+            logging.info(f"Processing {count}/{len(self.urls)}: {url}")
             result = self.get_whatcms_data(url)
             results.append({"URL": url, **result})
             time.sleep(1)  # Respect API rate limits
