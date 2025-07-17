@@ -123,7 +123,7 @@ class HKTech300Scraper:
         Scrapes details (website/email) for each startup link.
         """
         logging.info("Scraping startup detail pages...")
-        for i, (startup_name, detail_url) in enumerate(self.startup_links, 1):
+        for index, (startup_name, detail_url) in enumerate(self.startup_links, 1):
             soup = self._retry_load_page(detail_url, "body")
             if not soup:
                 self.startup_data.append({
@@ -153,7 +153,7 @@ class HKTech300Scraper:
 
             })
 
-            logging.info(f"[{i}/{len(self.startup_links)}] Saved: {startup_name}")
+            logging.info(f"[{index}/{len(self.startup_links)}] Saved: {startup_name}")
 
     def save_to_csv(self, filename="all_startup_details33.csv"):
         """

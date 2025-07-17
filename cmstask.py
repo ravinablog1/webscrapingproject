@@ -121,8 +121,8 @@ class WhatCMSScraper:
         logging.info("Starting scraping process...")
         results = []
 
-        for i, url in enumerate(self.urls, 1):
-            logging.info(f"🔍 Processing {i}/{len(self.urls)}: {url}")
+        for count, url in enumerate(self.urls, 1):
+            logging.info(f"Processing {i}/{len(self.urls)}: {url}")
             result = self.get_whatcms_data(url)
             results.append({"URL": url, **result})
             time.sleep(1)  # Respect API rate limits
