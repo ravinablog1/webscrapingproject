@@ -33,7 +33,7 @@ base_url = "https://www.cityu.edu.hk"
 all_startup_links = []
 
 # Load startup list page(s)
-for page in range(1):
+for page in range(42):
     page_url = f"{base_url}/hktech300/start-ups/all-start-ups?page={page}"
     
     for attempt in range(3):
