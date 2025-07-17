@@ -1,99 +1,156 @@
 import pandas as pd
 import requests
-import json
 import time
-# === Configuration ===
-API_KEY = 'wmbjxyw7tkkzlcwbtceaq8sshgrz84q5snnu612z7wtsv9a5liwitfyb4w5rpivhq0plm9'
-INPUT_FILE = 'Senior DA - Assignment.xlsx'    
-OUTPUT_FILE = 'whatcms_output.xlsx'
-INPUT_SHEET = 'WHATCMS INPUT'
+import logging
+from typing import Dict
 
+# === Logging Setup ===
+logging.basicConfig(
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler("whatcms_scraper.log"),
+        logging.StreamHandler()
+    ]
+)
 
-# === STEP 2: Read input file ===
-df = pd.read_excel(INPUT_FILE, sheet_name=INPUT_SHEET)
+class WhatCMSScraper:
+    """
+    Class to fetch CMS technology data from WhatCMS API for a list of URLs.
+    """
 
-if 'url' not in df.columns:
-    raise Exception("Input Excel must contain a column named 'URL'")
+    def __init__(self, api_key: str, input_file: str, input_sheet: str, output_file: str):
+        self.api_key = api_key
+        self.input_file = input_file
+        self.input_sheet = input_sheet
+        self.output_file = output_file
+        self.urls = []
 
-urls = df['url'].dropna().unique()
+    def read_input_urls(self):
+        """
+        Reads input Excel file and extracts unique URLs.
+        """
+        logging.info(f"Reading input file: {self.input_file} [Sheet: {self.input_sheet}]")
+        df = pd.read_excel(self.input_file, sheet_name=self.input_sheet)
 
-# === STEP 3: Function to call WhatCMS API ===
-def get_whatcms_data(url):
-    endpoint = "https://whatcms.org/API/Tech"
-    params = {'key': API_KEY, 'url': url}
+        if 'url' not in df.columns:
+            raise ValueError("Input Excel must contain a column named 'url'")
 
-    try:
-        response = requests.get(endpoint, params=params, timeout=10)
-        result = response.json()
-        print(result)
-        print(response.status_code)
+        self.urls = df['url'].dropna().unique()
+        logging.info(f"Found {len(self.urls)} unique URLs.")
 
-        data = {
-            "whatcms_link": f"https://whatcms.org/API/Tech?key={API_KEY}&url={url}",
-            "Blog_CMS": None,
-            "E-commerce_CMS": None,
-            "Programming_Language": None,
-            "Database": None,
-            "CDN": None,
-            "Web_Server": None,
-            "Landing_Page_Builder_CMS": None,
-            "Operating_System": None,
-            "Web_Framework": None,
-            "whatcms_response": response.status_code 
-        }
+    def get_whatcms_data(self, url: str) -> Dict[str, str]:
+        """
+        Queries the WhatCMS API for technology data about the given URL.
+        Returns structured result data.
+        """
+        endpoint = "https://whatcms.org/API/Tech"
+        cleaned_url = url.replace("http://", "").replace("https://", "").split("/")[0]
+        params = {"key": self.api_key, "url": cleaned_url}
 
-        for tech in result.get("results", []):
-            name = tech.get("name")
-            categories = tech.get("categories", [])
+        logging.debug(f"Calling WhatCMS API for: {cleaned_url}")
 
-            for category in categories:
-                if category == "Blog":
-                    data["Blog_CMS"] = name
-                elif category == "E-commerce":
-                    data["E-commerce_CMS"] = name
-                elif category == "Programming Language":
-                    data["Programming_Language"] = name
-                elif category == "Database":
-                    data["Database"] = name
-                elif category == "CDN":
-                    data["CDN"] = name
-                elif category == "Web Server":
-                    data["Web_Server"] = name
-                elif category == "Landing Page Builder":
-                    data["Landing_Page_Builder_CMS"] = name
-                elif category == "Operating System":
-                    data["Operating_System"] = name
-                elif category == "Web Framework":
-                    data["Web_Framework"] = name
+        try:
+            response = requests.get(endpoint, params=params, timeout=10)
+            response.raise_for_status()
+            result = response.json()
 
-        return data
+            data = {
+                "whatcms_link": response.url,
+                "Blog_CMS": None,
+                "E-commerce_CMS": None,
+                "Programming_Language": None,
+                "Database": None,
+                "CDN": None,
+                "Web_Server": None,
+                "Landing_Page_Builder_CMS": None,
+                "Operating_System": None,
+                "Web_Framework": None,
+                "whatcms_response": response.status_code
+            }
 
-    except requests.exceptions.RequestException as e:
-        status_code = getattr(e.response, "status_code", None) or 500
-        return {
-            "whatcms_link": f"https://whatcms.org/API/Tech?key={API_KEY}&url={url}",
-            "Blog_CMS": None,
-            "E-commerce_CMS": None,
-            "Programming_Language": None,
-            "Database": None,
-            "CDN": None,
-            "Web_Server": None,
-            "Landing_Page_Builder_CMS": None,
-            "Operating_System": None,
-            "Web_Framework": None,
-            "whatcms_response": status_code 
-        }
+            for tech in result.get("results", []):
+                name = tech.get("name")
+                categories = tech.get("categories", [])
 
-results = []
+                for category in categories:
+                    if category == "Blog":
+                        data["Blog_CMS"] = name
+                    elif category == "E-commerce":
+                        data["E-commerce_CMS"] = name
+                    elif category == "Programming Language":
+                        data["Programming_Language"] = name
+                    elif category == "Database":
+                        data["Database"] = name
+                    elif category == "CDN":
+                        data["CDN"] = name
+                    elif category == "Web Server":
+                        data["Web_Server"] = name
+                    elif category == "Landing Page Builder":
+                        data["Landing_Page_Builder_CMS"] = name
+                    elif category == "Operating System":
+                        data["Operating_System"] = name
+                    elif category == "Web Framework":
+                        data["Web_Framework"] = name
 
-for i, url in enumerate(urls, 1):
-    print(f"🔍 Processing {i}/{len(urls)}: {url}")
-    cleaned_url = url.replace("http://", "").replace("https://", "").split("/")[0]
-    data = get_whatcms_data(cleaned_url)
-    results.append({"URL": url, **data})
-    time.sleep(1)  # Avoid hitting rate limits
+            return data
 
-# === STEP 5: Save to output Excel ===
-output_df = pd.DataFrame(results)
-output_df.to_excel(OUTPUT_FILE, index=False)
-print(f"✅ Done. Results saved to '{OUTPUT_FILE}'")
+        except requests.RequestException as e:
+            logging.error(f"Error calling WhatCMS for {url}: {e}")
+            return {
+                "whatcms_link": f"{endpoint}?key={self.api_key}&url={cleaned_url}",
+                "Blog_CMS": None,
+                "E-commerce_CMS": None,
+                "Programming_Language": None,
+                "Database": None,
+                "CDN": None,
+                "Web_Server": None,
+                "Landing_Page_Builder_CMS": None,
+                "Operating_System": None,
+                "Web_Framework": None,
+                "whatcms_response": getattr(e.response, "status_code", 500)
+            }
+
+    def scrape_all(self):
+        """
+        Loops through URLs, fetches CMS data, and stores it.
+        """
+        logging.info("Starting scraping process...")
+        results = []
+
+        for i, url in enumerate(self.urls, 1):
+            logging.info(f"🔍 Processing {i}/{len(self.urls)}: {url}")
+            result = self.get_whatcms_data(url)
+            results.append({"URL": url, **result})
+            time.sleep(1)  # Respect API rate limits
+
+        return results
+
+    def save_results(self, results: list):
+        """
+        Saves results to output Excel file.
+        """
+        logging.info(f"Saving results to {self.output_file}...")
+        df = pd.DataFrame(results)
+        df.to_excel(self.output_file, index=False)
+        logging.info("Results saved successfully.")
+
+    def run(self):
+        """
+        Runs the entire process from reading input to saving output.
+        """
+        try:
+            self.read_input_urls()
+            results = self.scrape_all()
+            self.save_results(results)
+        except Exception as e:
+            logging.error(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    scraper = WhatCMSScraper(
+        api_key='wmbjxyw7tkkzlcwbtceaq8sshgrz84q5snnu612z7wtsv9a5liwitfyb4w5rpivhq0plm9',
+        input_file='Senior DA - Assignment.xlsx',
+        input_sheet='WHATCMS INPUT',
+        output_file='whatcms_output.xlsx'
+    )
+    scraper.run()
