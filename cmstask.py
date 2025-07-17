@@ -3,6 +3,9 @@ import requests
 import time
 import logging
 from typing import Dict
+import os
+from dotenv import load_dotenv
+
 
 # === Logging Setup ===
 logging.basicConfig(
@@ -147,10 +150,12 @@ class WhatCMSScraper:
             logging.error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
+    load_dotenv()
+
     scraper = WhatCMSScraper(
-        api_key='wmbjxyw7tkkzlcwbtceaq8sshgrz84q5snnu612z7wtsv9a5liwitfyb4w5rpivhq0plm9',
-        input_file='Senior DA - Assignment.xlsx',
-        input_sheet='WHATCMS INPUT',
-        output_file='whatcms_output.xlsx'
+        api_key=os.getenv("API_KEY"),
+        input_file=os.getenv("INPUT_FILE"),
+        input_sheet=os.getenv("INPUT_SHEET"),
+        output_file=os.getenv("OUTPUT_FILE")
     )
     scraper.run()

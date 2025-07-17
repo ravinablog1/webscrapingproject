@@ -5,3 +5,4 @@ beautifulsoup4==4.13.4
 soupsieve==2.7
 requests==2.32.3	
 chromedriver-autoinstaller==0.6.4
+python-dotenv==1.1.1
