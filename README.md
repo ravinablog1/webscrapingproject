@@ -9,7 +9,7 @@ This script scrapes startup company information from the City University of Hong
 - Direct CityU URL
 
 ### 📁 Files:
-- `startupcompanydetails.py`: Main scraping logic
+- `startup_info_scraper.py`: Main scraping logic
 - `requirements.txt`: Python dependencies
 - `all_startup_details.csv`: Sample output
 
